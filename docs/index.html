@@ -140,8 +140,14 @@
       let moneyMultiplier = 1;
       let gameLoop;
       let gameRunning = true;
-      let playerName =
-        prompt("Enter your name for the leaderboard:", "Player") || "Anonymous";
+      let playerName = localStorage.getItem("playerName");
+
+      if (!playerName) {
+        playerName =
+          prompt("Enter your name for the leaderboard:", "Player") ||
+          "Anonymous";
+        localStorage.setItem("playerName", playerName);
+      }
 
       const scoreDisplay = document.getElementById("score");
       const moneyDisplay = document.getElementById("money");
@@ -278,7 +284,57 @@
         }
       }
 
-      // Event listeners and rest of the game logic remain the same...
+      // Event listeners
+      document.addEventListener("keydown", (e) => {
+        switch (e.key) {
+          case "ArrowLeft":
+            if (dx === 0) {
+              dx = -1;
+              dy = 0;
+            }
+            break;
+          case "ArrowRight":
+            if (dx === 0) {
+              dx = 1;
+              dy = 0;
+            }
+            break;
+          case "ArrowUp":
+            if (dy === 0) {
+              dx = 0;
+              dy = -1;
+            }
+            break;
+          case "ArrowDown":
+            if (dy === 0) {
+              dx = 0;
+              dy = 1;
+            }
+            break;
+        }
+      });
+
+      restartButton.addEventListener("click", startNewGame);
+      speedBoostButton.addEventListener("click", () => {
+        if (money >= 10) {
+          money -= 10;
+          speedBoost *= 2;
+          speedBoostButton.disabled = true;
+        }
+      });
+      moneyMultiplierButton.addEventListener("click", () => {
+        if (money >= 20) {
+          money -= 20;
+          moneyMultiplier *= 2;
+          moneyMultiplierButton.disabled = true;
+        }
+      });
+      gameOverRestart.addEventListener("click", startNewGame);
+
+      function gameLoopFunction() {
+        moveSnake();
+        drawGame();
+      }
 
       function startNewGame() {
         snake = [{ x: randomPosition(), y: randomPosition() }];
@@ -299,13 +355,52 @@
         gameLoop = setInterval(gameLoopFunction, 100 / speedBoost);
       }
 
-      // Rest of the functions (showGameOver, saveScore, updateLeaderboard) remain unchanged...
+      function showGameOver() {
+        finalScoreDisplay.textContent = score;
+        finalMoneyDisplay.textContent = money;
+        gameOverScreen.style.display = "block";
+        clearInterval(gameLoop);
+      }
+
+      function saveScore() {
+        let scores = JSON.parse(localStorage.getItem("scores") || "[]");
+        scores.push({ name: playerName, score: score });
+        scores.sort((a, b) => b.score - a.score);
+        localStorage.setItem("scores", JSON.stringify(scores.slice(0, 10))); // Keep top 10 scores
+        updateLeaderboard();
+      }
+
+      function updateLeaderboard() {
+        let scores = JSON.parse(localStorage.getItem("scores") || "[]");
+        leaderboardList.innerHTML = "";
+        scores.forEach((entry, index) => {
+          const li = document.createElement("li");
+          li.textContent = `${index + 1}. ${entry.name} - ${entry.score}`;
+          leaderboardList.appendChild(li);
+        });
+      }
 
       // Initialize the leaderboard
       updateLeaderboard();
 
       // Start the game
       startNewGame();
+
+      // Function to change nickname
+      function changeNickname() {
+        playerName =
+          prompt("Enter a new name for the leaderboard:", playerName) ||
+          playerName;
+        localStorage.setItem("playerName", playerName);
+      }
+
+      // Add a button for changing nickname
+      const controlsDiv = document.getElementById("controls");
+      const changeNicknameButton = document.createElement("button");
+      changeNicknameButton.textContent = "Change Nickname";
+      changeNicknameButton.className = "button";
+      changeNicknameButton.addEventListener("click", changeNickname);
+      controlsDiv.appendChild(changeNicknameButton);
     </script>
   </body>
 </html>
